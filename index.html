@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa Ormaza Velásquez</title>
+<meta name="apple-mobile-web-app-title" content="C. Ormaza">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#3E2B1F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EDE6D6;
+    --card: #FBF8F1;
+    --crust: #3E2B1F;
+    --crust-soft: #6B5847;
+    --wheat: #C89B3C;
+    --wheat-dark: #A87F27;
+    --oak: #5F6F3D;
+    --oak-dark: #4A5730;
+    --line: #DCD2BC;
+    --danger: #A94438;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--crust);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 0 120px;}
+
+  header{padding:36px 24px 0;text-align:center;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--oak-dark);margin-bottom:6px;
+  }
+  h1{
+    font-family:'Fraunces', serif;font-weight:600;font-size:clamp(30px,7vw,42px);
+    margin:0 0 6px;letter-spacing:-.01em;
+  }
+  .tagline{color:var(--crust-soft);font-size:14.5px;margin:0 0 22px;}
+  .score{width:100%;height:22px;display:block;}
+
+  section{padding:28px 24px 0;}
+  .section-title{font-family:'Fraunces', serif;font-size:20px;font-weight:600;margin:0 0 4px;}
+  .section-sub{font-size:13px;color:var(--crust-soft);margin:0 0 16px;}
+
+  .grid{display:grid;gap:12px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .prod-name{font-family:'Fraunces', serif;font-weight:600;font-size:17px;}
+  .variants{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .variant-btn{
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;border:1px solid var(--line);
+    background:#fff;color:var(--crust);border-radius:9px;padding:8px 10px;cursor:pointer;
+    transition:.15s;text-align:left;line-height:1.3;
+  }
+  .variant-btn:hover{border-color:var(--wheat);}
+  .variant-btn.active{background:var(--oak);border-color:var(--oak);color:#fff;}
+  .variant-size{display:block;font-weight:600;}
+  .variant-price{display:block;color:inherit;opacity:.8;}
+
+  .qty-row{display:flex;align-items:center;gap:12px;margin-top:12px;}
+  .qty-btn{
+    width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;
+    font-size:16px;cursor:pointer;color:var(--crust);display:flex;align-items:center;justify-content:center;
+  }
+  .qty-val{font-family:'IBM Plex Mono', monospace;min-width:20px;text-align:center;}
+  .add-btn{
+    margin-left:auto;background:var(--wheat);color:#fff;border:none;border-radius:9px;
+    padding:8px 16px;font-family:'Work Sans', sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;
+  }
+  .add-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .add-btn:hover:not(:disabled){background:var(--wheat-dark);}
+
+  .cart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .cart-empty{font-size:13.5px;color:var(--crust-soft);}
+  .cart-item{
+    display:flex;justify-content:space-between;align-items:center;padding:9px 0;
+    border-bottom:1px solid var(--line);font-size:14px;gap:10px;
+  }
+  .cart-item:last-of-type{border-bottom:none;}
+  .cart-item-name{font-weight:500;}
+  .cart-item-meta{font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--crust-soft);}
+  .cart-remove{background:none;border:none;color:var(--danger);cursor:pointer;font-size:13px;}
+  .cart-total{
+    display:flex;justify-content:space-between;padding-top:12px;margin-top:6px;
+    border-top:1px solid var(--crust);font-family:'Fraunces', serif;font-weight:600;font-size:17px;
+  }
+
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;}
+  input[type=text],input[type=tel],textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+    font-family:'Work Sans', sans-serif;font-size:14.5px;background:#fff;color:var(--crust);
+  }
+  textarea{resize:vertical;min-height:60px;}
+
+  .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .pick-btn{
+    border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 10px;
+    cursor:pointer;text-align:left;font-family:'Work Sans', sans-serif;
+  }
+  .pick-btn .l1{font-weight:600;font-size:14px;display:block;}
+  .pick-btn .l2{font-size:12px;color:var(--crust-soft);display:block;margin-top:2px;}
+  .pick-btn.active{border-color:var(--oak);background:#F1F0E4;}
+  .pick-btn.active .l1{color:var(--oak-dark);}
+
+  .cal-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cal-nav-btn{
+    width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#fff;
+    font-size:16px;cursor:pointer;color:var(--crust);
+  }
+  .cal-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+  .cal-month{font-family:'Fraunces', serif;font-weight:600;font-size:16px;text-transform:capitalize;}
+  .cal-weekdays{
+    display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
+    font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--crust-soft);margin-bottom:4px;
+  }
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-cell{
+    aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+    font-size:13.5px;border-radius:9px;color:var(--crust-soft);
+  }
+  .cal-cell.empty{visibility:hidden;}
+  .cal-cell.available{
+    background:#fff;border:1px solid var(--line);color:var(--crust);cursor:pointer;font-weight:600;
+  }
+  .cal-cell.available:hover{border-color:var(--wheat);}
+  .cal-cell.selected{background:var(--oak);border-color:var(--oak);color:#fff;}
+  .cal-selected{font-size:13px;color:var(--crust-soft);margin:12px 0 0;text-align:center;}
+
+  .transfer-box{
+    margin-top:12px;background:#F5F0E4;border:1px dashed var(--wheat-dark);
+    border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;
+  }
+  .transfer-box b{font-family:'IBM Plex Mono', monospace;font-weight:600;}
+
+  .send-bar{
+    position:fixed;bottom:0;left:0;right:0;background:var(--bg);
+    border-top:1px solid var(--line);padding:12px 24px calc(14px + env(safe-area-inset-bottom));
+  }
+  .send-bar-inner{max-width:640px;margin:0 auto;}
+  .send-btn{
+    width:100%;background:var(--oak);color:#fff;border:none;border-radius:12px;padding:15px;
+    font-size:15.5px;font-weight:600;font-family:'Work Sans', sans-serif;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .send-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .send-btn:hover:not(:disabled){background:var(--oak-dark);}
+  .error{color:var(--danger);font-size:12.5px;margin-top:8px;}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0 6px;}
+  .switch{
+    width:40px;height:22px;background:var(--line);border-radius:20px;position:relative;cursor:pointer;border:none;flex-shrink:0;
+  }
+  .switch.on{background:var(--oak);}
+  .switch::after{
+    content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;
+    border-radius:50%;transition:.15s;
+  }
+  .switch.on::after{left:20px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+
+  <header>
+    <div class="eyebrow">Casa Ormaza Velásquez</div>
+    <h1>Haz tu pedido</h1>
+    <p class="tagline">Pan de masa madre, dulces y conservas hechos a mano</p>
+    <svg class="score" viewBox="0 0 400 22" preserveAspectRatio="none">
+      <path d="M0 11 H400" stroke="#DCD2BC" stroke-width="1"/>
+      <path d="M40 4 L70 18" stroke="#C89B3C" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M90 4 L120 18" stroke="#5F6F3D" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M170 4 L200 18" stroke="#C89B3C" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M280 4 L310 18" stroke="#5F6F3D" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M330 4 L360 18" stroke="#C89B3C" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </header>
+
+  <section>
+    <p class="section-title">Catálogo</p>
+    <p class="section-sub">Elige tamaño y cantidad de cada producto</p>
+    <div class="grid" id="catalog"></div>
+  </section>
+
+  <section id="festive-section" style="display:none;">
+    <p class="section-title">Temporada festiva</p>
+    <p class="section-sub">Disponibles solo bajo pedido en fechas especiales</p>
+    <div class="grid" id="festive-catalog"></div>
+  </section>
+
+  <section>
+    <p class="section-title">Tu pedido</p>
+    <div class="cart" id="cart"></div>
+  </section>
+
+  <section>
+    <p class="section-title">Entrega</p>
+    <p class="section-sub">Solo jueves o sábado, desde las 11:00 am. Las fechas más próximas dependen de disponibilidad de stock — te confirmamos por WhatsApp.</p>
+    <div class="cal-card">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev" type="button">‹</button>
+        <span class="cal-month" id="cal-month"></span>
+        <button class="cal-nav-btn" id="cal-next" type="button">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <p class="cal-selected" id="cal-selected"></p>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-title">Tus datos</p>
+    <label for="name">Nombre</label>
+    <input type="text" id="name" placeholder="Tu nombre completo">
+    <label for="phone">Teléfono</label>
+    <input type="tel" id="phone" placeholder="09XXXXXXXX">
+    <label for="email">Correo (opcional)</label>
+    <input type="text" id="email" placeholder="tucorreo@ejemplo.com">
+
+    <div class="toggle-row">
+      <span style="font-size:13.5px;font-weight:600;">¿Necesitas factura?</span>
+      <button type="button" class="switch" id="invoice-switch"></button>
+    </div>
+    <div id="invoice-fields" style="display:none;">
+      <label for="idnumber">Cédula o RUC</label>
+      <input type="text" id="idnumber" placeholder="Número de cédula o RUC">
+    </div>
+
+    <label for="note">Nota (opcional)</label>
+    <textarea id="note" placeholder="Ej: sin nueces, es para regalo..."></textarea>
+  </section>
+
+  <section>
+    <p class="section-title">Forma de pago</p>
+    <p class="section-sub">Se paga al retirar el pedido</p>
+    <div class="pay-grid" id="pay"></div>
+    <div class="transfer-box" id="transfer-info" style="display:none;">
+      Transferencia a cuenta de ahorros Banco del Pacífico<br>
+      N° <b>1069535566</b> — Pamela Ormaza<br>
+      Cédula: <b>1303756876</b><br>
+      Envía el comprobante junto al pedido por WhatsApp.
+    </div>
+  </section>
+
+  <div style="height:24px;"></div>
+</div>
+
+<div class="send-bar">
+  <div class="send-bar-inner">
+    <button class="send-btn" id="send-btn" disabled>Enviar pedido por WhatsApp →</button>
+    <div class="error" id="form-error"></div>
+  </div>
+</div>
+
+<script>
+const WHATSAPP_NUMBER = "593996792693";
+
+// ---- CATÁLOGO ----
+let CATALOG = [
+  { id:"integral", name:"Pan integral de masa madre", variants:[
+    {size:"550 g", price:4.00},{size:"700 g", price:5.00},{size:"1 kg", price:7.00}
+  ]},
+  { id:"ciabatta", name:"Ciabatta", variants:[
+    {size:"550 g", price:4.00}
+  ]},
+  { id:"galletitas", name:"Galletitas de almidón", variants:[
+    {size:"140 g", price:4.00}
+  ]},
+  { id:"miel", name:"Miel de abejas", variants:[
+    {size:"500 g", price:10.00},{size:"750 g", price:15.00},{size:"1000 g", price:20.00},{size:"1500 g", price:30.00}
+  ]},
+  { id:"peanut", name:"Peanut butter", variants:[
+    {size:"500 g", price:6.50},{size:"1000 g", price:13.00}
+  ]},
+];
+
+let FESTIVE = [];
+
+const SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-V1K4ryvY2XZ9ad4DTN3kI6sHBp7EAk9LLbLleuK4J-F4tdTbAu2bzBaBj6RMU9kDlw/exec";
+const CUPOS_SCRIPT_URL = SHEET_SCRIPT_URL;
+
+const GRUPO_CUPO = {
+  "Pan integral de masa madre": "pan",
+  "Ciabatta": "ciabatta",
+  "Galletitas de almidón": "galletitas",
+  "Miel de abejas": "mielpb",
+  "Peanut butter": "mielpb"
+};
+
+function loadCatalogViaJSONP(){
+  return new Promise((resolve, reject)=>{
+    const cbName = 'sheetCb_' + Date.now();
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error('Tiempo de espera agotado')); }, 10000);
+    function cleanup(){
+      clearTimeout(timeout);
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = function(data){ cleanup(); resolve(data); };
+    const script = document.createElement('script');
+    script.src = SHEET_SCRIPT_URL + '?callback=' + cbName;
+    script.onerror = ()=>{ cleanup(); reject(new Error('No se pudo cargar el script')); };
+    document.body.appendChild(script);
+  });
+}
+
+async function loadCatalogFromSheet(){
+  try{
+    const rows = await loadCatalogViaJSONP();
+    if(!Array.isArray(rows) || rows.length < 2) return;
+
+    const map = {};
+    const order = [];
+    rows.slice(1).forEach(cols=>{
+      const producto = String(cols[0]||'').trim();
+      const grupo = String(cols[1]||'').trim().toLowerCase();
+      const tamano = String(cols[2]||'').trim();
+      const precioRaw = cols[3];
+      if(!producto) return;
+      if(grupo !== 'catalogo' && grupo !== 'festivo') return;
+      const key = grupo + '||' + producto;
+      if(!map[key]){
+        map[key] = { id:key.replace(/[^a-z0-9]/gi,'-').toLowerCase(), name:producto, group:grupo, variants:[] };
+        order.push(key);
+      }
+      let priceNum = null;
+      if(precioRaw !== '' && precioRaw !== null && precioRaw !== undefined){
+        priceNum = typeof precioRaw === 'number' ? precioRaw : parseFloat(String(precioRaw).replace(',', '.'));
+        if(isNaN(priceNum)) priceNum = null;
+      }
+      map[key].variants.push({ size: tamano, price: priceNum });
+    });
+
+    const list = order.map(k => map[k]);
+    const newCatalog = list.filter(p => p.group === 'catalogo');
+    const newFestive = list.filter(p => p.group === 'festivo');
+
+    if(newCatalog.length > 0) CATALOG = newCatalog;
+    FESTIVE = newFestive;
+  }catch(e){
+  }
+}
+
+
+let cart = [];
+let selectedDate = null;
+let selectedPay = null;
+
+
+function fmt(n){ return '$' + n.toFixed(2); }
+
+// ---- CALENDARIO ----
+const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+let today = new Date(); today.setHours(0,0,0,0);
+let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const calMinMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const calMaxMonth = new Date(today.getFullYear()+1, today.getMonth(), 1);
+
+function isDeliveryDay(d){ const wd = d.getDay(); return wd===4 || wd===6; }
+function sameDay(a,b){ return a && b && a.getTime()===b.getTime(); }
+
+// Regla de corte: no se puede elegir la fecha si ya pasaron las 12:00 pm del día anterior
+function isDateAvailable(d){
+  if(!isDeliveryDay(d)) return false;
+  const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate()-1, 11, 0, 0);
+  return new Date() < cutoff;
+}
+
+function renderCalendar(){
+  const grid = document.getElementById('cal-grid');
+  const monthLabel = document.getElementById('cal-month');
+  monthLabel.textContent = `${MONTH_NAMES[calMonth.getMonth()]} ${calMonth.getFullYear()}`;
+
+  document.getElementById('cal-prev').disabled = calMonth.getTime() <= calMinMonth.getTime();
+  document.getElementById('cal-next').disabled = calMonth.getTime() >= calMaxMonth.getTime();
+
+  grid.innerHTML = '';
+  const firstDay = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
+
+  for(let i=0;i<startOffset;i++){
+    const c = document.createElement('div');
+    c.className = 'cal-cell empty';
+    grid.appendChild(c);
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const d = new Date(calMonth.getFullYear(), calMonth.getMonth(), day);
+    const c = document.createElement('div');
+    c.textContent = day;
+    if(isDateAvailable(d)){
+      c.className = 'cal-cell available' + (sameDay(d, selectedDate) ? ' selected' : '');
+      c.onclick = ()=>{ selectedDate = d; renderCalendar(); validateForm(); };
+    } else {
+      c.className = 'cal-cell';
+    }
+    grid.appendChild(c);
+  }
+
+  const sel = document.getElementById('cal-selected');
+  if(selectedDate){
+    const dayNames = {4:'Jueves',6:'Sábado'};
+    sel.textContent = `Entrega elegida: ${dayNames[selectedDate.getDay()]} ${selectedDate.getDate()} de ${MONTH_NAMES[selectedDate.getMonth()]}, desde las 11:00 am`;
+  } else {
+    sel.textContent = 'Toca un jueves o sábado disponible en el calendario.';
+  }
+}
+
+document.getElementById('cal-prev').onclick = ()=>{
+  if(calMonth.getTime() <= calMinMonth.getTime()) return;
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()-1, 1);
+  renderCalendar();
+};
+document.getElementById('cal-next').onclick = ()=>{
+  if(calMonth.getTime() >= calMaxMonth.getTime()) return;
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 1);
+  renderCalendar();
+};
+
+// ---- Helpers de semana (jueves/sábado) ----
+function getJuevesDeLaSemanaRaw(fecha){
+  const d = new Date(fecha);
+  const dow = d.getDay();
+  const diff = 4 - dow;
+  const jueves = new Date(d);
+  jueves.setDate(d.getDate() + diff);
+  return jueves;
+}
+function formatISODate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function getJuevesDeLaSemana(fecha){
+  return formatISODate(getJuevesDeLaSemanaRaw(fecha));
+}
+function getSabadoDeLaSemana(fecha){
+  const jueves = getJuevesDeLaSemanaRaw(fecha);
+  const sabado = new Date(jueves);
+  sabado.setDate(jueves.getDate() + 2);
+  return formatISODate(sabado);
+}
+
+// ---- PAGO ----
+function renderPay(){
+  const el = document.getElementById('pay');
+  el.innerHTML = '';
+  const opts = [{id:'efectivo', l1:'Efectivo', l2:'Al retirar'}, {id:'transferencia', l1:'Transferencia', l2:'Banco del Pacífico'}];
+  opts.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.className = 'pick-btn' + (selectedPay===o.id ? ' active':'');
+    btn.type='button';
+    btn.innerHTML = `<span class="l1">${o.l1}</span><span class="l2">${o.l2}</span>`;
+    btn.onclick = ()=>{ selectedPay = o.id; renderPay();
+      document.getElementById('transfer-info').style.display = o.id==='transferencia' ? 'block':'none';
+      validateForm();
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ---- CATÁLOGO (tarjetas) ----
+function productCard(p){
+  const card = document.createElement('div');
+  card.className = 'card';
+  let selectedVariant = null;
+  let qty = 1;
+
+  const top = document.createElement('div');
+  top.innerHTML = `<span class="prod-name">${p.name}</span>`;
+  card.appendChild(top);
+
+  const vwrap = document.createElement('div');
+  vwrap.className = 'variants';
+  p.variants.forEach((v)=>{
+    const b = document.createElement('button');
+    b.className = 'variant-btn';
+    b.type = 'button';
+    b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-price">${v.price!=null ? fmt(v.price) : 'Consultar'}</span>`;
+    b.onclick = ()=>{
+      selectedVariant = v;
+      vwrap.querySelectorAll('.variant-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      addBtn.disabled = false;
+    };
+    vwrap.appendChild(b);
+  });
+  card.appendChild(vwrap);
+
+  const qrow = document.createElement('div');
+  qrow.className = 'qty-row';
+  const minus = document.createElement('button');
+  minus.className='qty-btn'; minus.type='button'; minus.textContent='−';
+  const qval = document.createElement('span'); qval.className='qty-val'; qval.textContent='1';
+  const plus = document.createElement('button');
+  plus.className='qty-btn'; plus.type='button'; plus.textContent='+';
+  minus.onclick = ()=>{ if(qty>1){ qty--; qval.textContent=qty; } };
+  plus.onclick = ()=>{ qty++; qval.textContent=qty; };
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-btn'; addBtn.type='button'; addBtn.textContent='Agregar';
+  addBtn.disabled = true;
+  addBtn.onclick = ()=>{
+    if(!selectedVariant) return;
+    cart.push({
+      key: p.id+'-'+selectedVariant.size+'-'+Date.now(),
+      name: p.name, size: selectedVariant.size, price: selectedVariant.price, qty
+    });
+    renderCart();
+    validateForm();
+    qty = 1; qval.textContent='1';
+  };
+  qrow.appendChild(minus); qrow.appendChild(qval); qrow.appendChild(plus); qrow.appendChild(addBtn);
+  card.appendChild(qrow);
+
+  return card;
+}
+
+function renderCatalog(){
+  const el = document.getElementById('catalog');
+  el.innerHTML = '';
+  CATALOG.forEach(p=> el.appendChild(productCard(p)));
+
+  const fSection = document.getElementById('festive-section');
+  const fEl = document.getElementById('festive-catalog');
+  fEl.innerHTML = '';
+  if(FESTIVE.length > 0){
+    fSection.style.display = 'block';
+    FESTIVE.forEach(p=> fEl.appendChild(productCard(p)));
+  } else {
+    fSection.style.display = 'none';
+  }
+}
+
+// ---- CARRITO ----
+function renderCart(){
+  const el = document.getElementById('cart');
+  if(cart.length===0){
+    el.innerHTML = '<p class="cart-empty">Aún no has agregado productos.</p>';
+    return;
+  }
+  let html = '';
+  let total = 0;
+  let hasConsult = false;
+  cart.forEach(item=>{
+    const line = item.price!=null ? item.price*item.qty : 0;
+    if(item.price==null) hasConsult = true;
+    total += line;
+    html += `<div class="cart-item">
+      <div><div class="cart-item-name">${item.name}</div><div class="cart-item-meta">${item.size} × ${item.qty}${item.price!=null ? ' — '+fmt(line):''}</div></div>
+      <button class="cart-remove" data-key="${item.key}">Quitar</button>
+    </div>`;
+  });
+  html += `<div class="cart-total"><span>Total${hasConsult?' (aprox.)':''}</span><span>${fmt(total)}</span></div>`;
+  el.innerHTML = html;
+  el.querySelectorAll('.cart-remove').forEach(btn=>{
+    btn.onclick = ()=>{
+      cart = cart.filter(i=>i.key!==btn.dataset.key);
+      renderCart();
+      validateForm();
+    };
+  });
+}
+
+// ---- ENVÍO ----
+let wantsInvoice = false;
+
+document.getElementById('invoice-switch').onclick = ()=>{
+  wantsInvoice = !wantsInvoice;
+  document.getElementById('invoice-switch').classList.toggle('on', wantsInvoice);
+  document.getElementById('invoice-fields').style.display = wantsInvoice ? 'block' : 'none';
+  validateForm();
+};
+
+function validateForm(){
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const idnumber = document.getElementById('idnumber').value.trim();
+  let ok = cart.length>0 && selectedDate && selectedPay && name && phone;
+  if(wantsInvoice && !idnumber) ok = false;
+  document.getElementById('send-btn').disabled = !ok;
+  return ok;
+}
+
+function buildMessage(){
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const idnumber = document.getElementById('idnumber').value.trim();
+  const note = document.getElementById('note').value.trim();
+  const dayNames = {4:'Jueves',6:'Sábado'};
+  const dateLabel = `${dayNames[selectedDate.getDay()]} ${selectedDate.toLocaleDateString('es-EC',{day:'numeric', month:'long'})}`;
+  let lines = [];
+  lines.push(`Hola, quiero hacer un pedido en Casa Ormaza Velásquez:`);
+  lines.push('');
+  cart.forEach(i=>{
+    lines.push(`• ${i.name} (${i.size}) x${i.qty}${i.price!=null ? ' — '+fmt(i.price*i.qty) : ' — consultar precio'}`);
+  });
+  const total = cart.reduce((s,i)=> s + (i.price!=null ? i.price*i.qty : 0), 0);
+  lines.push('');
+  lines.push(`Total: ${fmt(total)}`);
+  lines.push('');
+  lines.push(`Entrega: ${dateLabel}, desde las 11:00 am`);
+  lines.push(`Pago: ${selectedPay==='efectivo' ? 'Efectivo al retirar' : 'Transferencia al retirar'}`);
+  lines.push('');
+  lines.push(`Nombre: ${name}`);
+  lines.push(`Teléfono: ${phone}`);
+  if(email) lines.push(`Correo: ${email}`);
+  if(wantsInvoice) lines.push(`Factura: Sí — Cédula/RUC: ${idnumber}`);
+  if(note) lines.push(`Nota: ${note}`);
+  return lines.join('\n');
+}
+
+document.getElementById('send-btn').onclick = async ()=>{
+  if(!validateForm()) return;
+
+  const sendBtn = document.getElementById('send-btn');
+  const errorEl = document.getElementById('form-error');
+  errorEl.textContent = '';
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Verificando disponibilidad...';
+
+  const jueves = getJuevesDeLaSemana(selectedDate);
+  const sabado = getSabadoDeLaSemana(selectedDate);
+
+  try {
+    for (const item of cart) {
+      const grupo = GRUPO_CUPO[item.name];
+      if (!grupo) continue; // producto festivo u otro sin control de cupo
+
+      const resp = await fetch(CUPOS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ grupo, cantidad: item.qty, jueves, sabado })
+      });
+      const result = await resp.json();
+      if (!result.ok) {
+        errorEl.textContent = 'Uno de los productos ya no tiene cupo disponible para esa fecha. Elige otra fecha o reduce la cantidad.';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Enviar pedido por WhatsApp →';
+        return;
+      }
+    }
+
+    const msg = buildMessage();
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  } catch (err) {
+    errorEl.textContent = 'No se pudo verificar el cupo. Intenta de nuevo.';
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Enviar pedido por WhatsApp →';
+  }
+};
+
+['name','phone','idnumber'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', validateForm);
+});
+
+renderCalendar();
+renderPay();
+renderCatalog();
+renderCart();
+validateForm();
+
+loadCatalogFromSheet().then(()=>{
+  renderCatalog();
+});
+</script>
+</body>
+</html>
