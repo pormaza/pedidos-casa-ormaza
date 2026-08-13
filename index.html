@@ -265,7 +265,10 @@
 const WHATSAPP_NUMBER = "593996792693";
 
 // ---- CATÁLOGO ----
-let CATALOG = [
+// Catálogo de respaldo: solo se usa si falla la conexión con la hoja.
+// Mientras se espera la respuesta real, la app muestra "Cargando catálogo..."
+// en vez de este respaldo, para no mostrar productos ya eliminados.
+const CATALOG_RESPALDO = [
   { id:"integral", name:"Pan integral de masa madre", variants:[
     {size:"550 g", price:4.00},{size:"700 g", price:5.00},{size:"1 kg", price:7.00}
   ]},
@@ -283,7 +286,9 @@ let CATALOG = [
   ]},
 ];
 
+let CATALOG = [];
 let FESTIVE = [];
+let catalogState = 'loading'; // 'loading' | 'ready' | 'error'
 
 const SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-V1K4ryvY2XZ9ad4DTN3kI6sHBp7EAk9LLbLleuK4J-F4tdTbAu2bzBaBj6RMU9kDlw/exec";
 const CUPOS_SCRIPT_URL = SHEET_SCRIPT_URL;
@@ -316,7 +321,7 @@ function loadCatalogViaJSONP(){
 async function loadCatalogFromSheet(){
   try{
     const rows = await loadCatalogViaJSONP();
-    if(!Array.isArray(rows) || rows.length < 2) return;
+    if(!Array.isArray(rows) || rows.length < 2) throw new Error('respuesta vacía');
 
     const map = {};
     const order = [];
@@ -344,9 +349,14 @@ async function loadCatalogFromSheet(){
     const newCatalog = list.filter(p => p.group === 'catalogo');
     const newFestive = list.filter(p => p.group === 'festivo');
 
-    if(newCatalog.length > 0) CATALOG = newCatalog;
+    CATALOG = newCatalog; // se usa tal cual venga de la hoja, aunque quede vacío
     FESTIVE = newFestive;
+    catalogState = 'ready';
   }catch(e){
+    // Solo aquí, si de verdad falló la conexión, usamos el respaldo
+    CATALOG = CATALOG_RESPALDO;
+    FESTIVE = [];
+    catalogState = 'error';
   }
 }
 
@@ -528,6 +538,21 @@ function productCard(p){
 function renderCatalog(){
   const el = document.getElementById('catalog');
   el.innerHTML = '';
+
+  if(catalogState === 'loading'){
+    el.innerHTML = '<p class="cart-empty">Cargando catálogo...</p>';
+    document.getElementById('festive-section').style.display = 'none';
+    return;
+  }
+
+  if(catalogState === 'error'){
+    const warn = document.createElement('p');
+    warn.className = 'error';
+    warn.style.marginBottom = '10px';
+    warn.textContent = 'No se pudo conectar con el catálogo en línea. Mostrando una versión de respaldo que puede no estar actualizada.';
+    el.appendChild(warn);
+  }
+
   CATALOG.forEach(p=> el.appendChild(productCard(p)));
 
   const fSection = document.getElementById('festive-section');
@@ -667,7 +692,7 @@ document.getElementById('send-btn').onclick = async ()=>{
 
 renderCalendar();
 renderPay();
-renderCatalog();
+renderCatalog(); // muestra "Cargando catálogo..." mientras llega la respuesta real
 renderCart();
 validateForm();
 
