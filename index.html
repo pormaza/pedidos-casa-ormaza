@@ -438,7 +438,7 @@ function productCard(p){
     }
     const agotado = remaining !== null && remaining <= 0;
     if(agotado){
-      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-agotado">Agotado</span>`;
+      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-agotado">0 disponibles</span>`;
       b.disabled = true;
     } else {
       const priceText = v.price!=null ? fmt(v.price) : 'Consultar';
