@@ -430,12 +430,20 @@ function productCard(p){
     b.className = 'variant-btn';
     b.type = 'button';
     const key = p.name + '||' + v.size;
-    const agotado = disponibilidad && Object.prototype.hasOwnProperty.call(disponibilidad, key) && disponibilidad[key] <= 0;
+    let remaining = null;
+    if(disponibilidad && Object.prototype.hasOwnProperty.call(disponibilidad, key)){
+      remaining = disponibilidad[key]; // ya hay pedidos esta fecha: cupo real restante
+    } else if(v.cupoMax != null && v.cupoMax > 0){
+      remaining = v.cupoMax; // nadie ha pedido esta variante esta fecha: cupo completo disponible
+    }
+    const agotado = remaining !== null && remaining <= 0;
     if(agotado){
       b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-agotado">Agotado</span>`;
       b.disabled = true;
     } else {
-      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-price">${v.price!=null ? fmt(v.price) : 'Consultar'}</span>`;
+      const priceText = v.price!=null ? fmt(v.price) : 'Consultar';
+      const countText = (selectedDate && remaining !== null) ? ` · ${remaining} disp.` : '';
+      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-price">${priceText}${countText}</span>`;
     }
     b.onclick = ()=>{
       if(b.disabled) return;
