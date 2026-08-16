@@ -433,7 +433,7 @@ function productCard(p){
     let remaining = null;
     if(disponibilidad && Object.prototype.hasOwnProperty.call(disponibilidad, key)){
       remaining = disponibilidad[key]; // ya hay pedidos esta fecha: cupo real restante
-    } else if(v.cupoMax != null && v.cupoMax > 0){
+    } else if(v.cupoMax != null){
       remaining = v.cupoMax; // nadie ha pedido esta variante esta fecha: cupo completo disponible
     }
     const agotado = remaining !== null && remaining <= 0;
