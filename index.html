@@ -61,8 +61,10 @@
   }
   .variant-btn:hover{border-color:var(--wheat);}
   .variant-btn.active{background:var(--oak);border-color:var(--oak);color:#fff;}
+  .variant-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--bg);}
   .variant-size{display:block;font-weight:600;}
   .variant-price{display:block;color:inherit;opacity:.8;}
+  .variant-agotado{display:block;color:var(--danger);font-weight:600;}
 
   .qty-row{display:flex;align-items:center;gap:12px;margin-top:12px;}
   .qty-btn{
@@ -110,28 +112,6 @@
   .pick-btn.active .l1{color:var(--oak-dark);}
 
   .cal-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
-  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .cal-nav-btn{
-    width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#fff;
-    font-size:16px;cursor:pointer;color:var(--crust);
-  }
-  .cal-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
-  .cal-month{font-family:'Fraunces', serif;font-weight:600;font-size:16px;text-transform:capitalize;}
-  .cal-weekdays{
-    display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
-    font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--crust-soft);margin-bottom:4px;
-  }
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .cal-cell{
-    aspect-ratio:1;display:flex;align-items:center;justify-content:center;
-    font-size:13.5px;border-radius:9px;color:var(--crust-soft);
-  }
-  .cal-cell.empty{visibility:hidden;}
-  .cal-cell.available{
-    background:#fff;border:1px solid var(--line);color:var(--crust);cursor:pointer;font-weight:600;
-  }
-  .cal-cell.available:hover{border-color:var(--wheat);}
-  .cal-cell.selected{background:var(--oak);border-color:var(--oak);color:#fff;}
   .cal-selected{font-size:13px;color:var(--crust-soft);margin:12px 0 0;text-align:center;}
 
   .transfer-box{
@@ -184,8 +164,17 @@
   </header>
 
   <section>
+    <p class="section-title">Entrega</p>
+    <p class="section-sub">Elige jueves o sábado de esta semana, desde las 11:00 am. El cupo disponible se actualiza en vivo.</p>
+    <div class="cal-card">
+      <div class="pay-grid" id="day-grid"></div>
+      <p class="cal-selected" id="cal-selected"></p>
+    </div>
+  </section>
+
+  <section>
     <p class="section-title">Catálogo</p>
-    <p class="section-sub">Elige tamaño y cantidad de cada producto</p>
+    <p class="section-sub" id="catalog-sub">Elige tu fecha de entrega arriba para ver disponibilidad</p>
     <div class="grid" id="catalog"></div>
   </section>
 
@@ -198,23 +187,6 @@
   <section>
     <p class="section-title">Tu pedido</p>
     <div class="cart" id="cart"></div>
-  </section>
-
-  <section>
-    <p class="section-title">Entrega</p>
-    <p class="section-sub">Solo jueves o sábado, desde las 11:00 am. Las fechas más próximas dependen de disponibilidad de stock — te confirmamos por WhatsApp.</p>
-    <div class="cal-card">
-      <div class="cal-nav">
-        <button class="cal-nav-btn" id="cal-prev" type="button">‹</button>
-        <span class="cal-month" id="cal-month"></span>
-        <button class="cal-nav-btn" id="cal-next" type="button">›</button>
-      </div>
-      <div class="cal-weekdays">
-        <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
-      <p class="cal-selected" id="cal-selected"></p>
-    </div>
   </section>
 
   <section>
@@ -265,10 +237,7 @@
 const WHATSAPP_NUMBER = "593996792693";
 
 // ---- CATÁLOGO ----
-// Catálogo de respaldo: solo se usa si falla la conexión con la hoja.
-// Mientras se espera la respuesta real, la app muestra "Cargando catálogo..."
-// en vez de este respaldo, para no mostrar productos ya eliminados.
-const CATALOG_RESPALDO = [
+let CATALOG = [
   { id:"integral", name:"Pan integral de masa madre", variants:[
     {size:"550 g", price:4.00},{size:"700 g", price:5.00},{size:"1 kg", price:7.00}
   ]},
@@ -286,24 +255,17 @@ const CATALOG_RESPALDO = [
   ]},
 ];
 
-let CATALOG = [];
 let FESTIVE = [];
-let catalogState = 'loading'; // 'loading' | 'ready' | 'error'
 
 const SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-V1K4ryvY2XZ9ad4DTN3kI6sHBp7EAk9LLbLleuK4J-F4tdTbAu2bzBaBj6RMU9kDlw/exec";
 const CUPOS_SCRIPT_URL = SHEET_SCRIPT_URL;
 
-const GRUPO_CUPO = {
-  "Pan integral de masa madre": "pan",
-  "Ciabatta": "ciabatta",
-  "Galletitas de almidón": "galletitas",
-  "Miel de abejas": "mielpb",
-  "Peanut butter": "mielpb"
-};
+// Disponibilidad de la fecha elegida: { "Producto||Tamaño": cantidadDisponible }
+let disponibilidad = null;
 
-function loadCatalogViaJSONP(){
+function jsonpRequest(url){
   return new Promise((resolve, reject)=>{
-    const cbName = 'sheetCb_' + Date.now();
+    const cbName = 'sheetCb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
     const timeout = setTimeout(()=>{ cleanup(); reject(new Error('Tiempo de espera agotado')); }, 10000);
     function cleanup(){
       clearTimeout(timeout);
@@ -312,16 +274,28 @@ function loadCatalogViaJSONP(){
     }
     window[cbName] = function(data){ cleanup(); resolve(data); };
     const script = document.createElement('script');
-    script.src = SHEET_SCRIPT_URL + '?callback=' + cbName;
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
     script.onerror = ()=>{ cleanup(); reject(new Error('No se pudo cargar el script')); };
     document.body.appendChild(script);
   });
 }
 
+function loadCatalogViaJSONP(){
+  return jsonpRequest(SHEET_SCRIPT_URL);
+}
+
+async function loadDisponibilidad(fechaISO){
+  try{
+    disponibilidad = await jsonpRequest(SHEET_SCRIPT_URL + '?consulta=disponibilidad&fecha=' + fechaISO);
+  }catch(e){
+    disponibilidad = null; // si falla, no bloqueamos: se valida igual al enviar
+  }
+}
+
 async function loadCatalogFromSheet(){
   try{
     const rows = await loadCatalogViaJSONP();
-    if(!Array.isArray(rows) || rows.length < 2) throw new Error('respuesta vacía');
+    if(!Array.isArray(rows) || rows.length < 2) return;
 
     const map = {};
     const order = [];
@@ -330,6 +304,7 @@ async function loadCatalogFromSheet(){
       const grupo = String(cols[1]||'').trim().toLowerCase();
       const tamano = String(cols[2]||'').trim();
       const precioRaw = cols[3];
+      const cupoMaxRaw = cols[4];
       if(!producto) return;
       if(grupo !== 'catalogo' && grupo !== 'festivo') return;
       const key = grupo + '||' + producto;
@@ -342,21 +317,21 @@ async function loadCatalogFromSheet(){
         priceNum = typeof precioRaw === 'number' ? precioRaw : parseFloat(String(precioRaw).replace(',', '.'));
         if(isNaN(priceNum)) priceNum = null;
       }
-      map[key].variants.push({ size: tamano, price: priceNum });
+      let cupoMaxNum = 0;
+      if(cupoMaxRaw !== '' && cupoMaxRaw !== null && cupoMaxRaw !== undefined){
+        cupoMaxNum = typeof cupoMaxRaw === 'number' ? cupoMaxRaw : parseInt(String(cupoMaxRaw), 10);
+        if(isNaN(cupoMaxNum)) cupoMaxNum = 0;
+      }
+      map[key].variants.push({ size: tamano, price: priceNum, cupoMax: cupoMaxNum });
     });
 
     const list = order.map(k => map[k]);
     const newCatalog = list.filter(p => p.group === 'catalogo');
     const newFestive = list.filter(p => p.group === 'festivo');
 
-    CATALOG = newCatalog; // se usa tal cual venga de la hoja, aunque quede vacío
+    if(newCatalog.length > 0) CATALOG = newCatalog;
     FESTIVE = newFestive;
-    catalogState = 'ready';
   }catch(e){
-    // Solo aquí, si de verdad falló la conexión, usamos el respaldo
-    CATALOG = CATALOG_RESPALDO;
-    FESTIVE = [];
-    catalogState = 'error';
   }
 }
 
@@ -365,100 +340,58 @@ let cart = [];
 let selectedDate = null;
 let selectedPay = null;
 
-
 function fmt(n){ return '$' + n.toFixed(2); }
 
-// ---- CALENDARIO ----
+// ---- ENTREGA: solo jueves/sábado de la semana en curso, sin restricción de hora ----
 const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DAY_NAMES = {4:'Jueves', 6:'Sábado'};
 let today = new Date(); today.setHours(0,0,0,0);
-let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-const calMinMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-const calMaxMonth = new Date(today.getFullYear()+1, today.getMonth(), 1);
 
-function isDeliveryDay(d){ const wd = d.getDay(); return wd===4 || wd===6; }
-function sameDay(a,b){ return a && b && a.getTime()===b.getTime(); }
-
-// Regla de corte: no se puede elegir la fecha si ya pasaron las 12:00 pm del día anterior
-function isDateAvailable(d){
-  if(!isDeliveryDay(d)) return false;
-  const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate()-1, 11, 0, 0);
-  return new Date() < cutoff;
-}
-
-function renderCalendar(){
-  const grid = document.getElementById('cal-grid');
-  const monthLabel = document.getElementById('cal-month');
-  monthLabel.textContent = `${MONTH_NAMES[calMonth.getMonth()]} ${calMonth.getFullYear()}`;
-
-  document.getElementById('cal-prev').disabled = calMonth.getTime() <= calMinMonth.getTime();
-  document.getElementById('cal-next').disabled = calMonth.getTime() >= calMaxMonth.getTime();
-
-  grid.innerHTML = '';
-  const firstDay = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1);
-  const startOffset = firstDay.getDay();
-  const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
-
-  for(let i=0;i<startOffset;i++){
-    const c = document.createElement('div');
-    c.className = 'cal-cell empty';
-    grid.appendChild(c);
-  }
-  for(let day=1; day<=daysInMonth; day++){
-    const d = new Date(calMonth.getFullYear(), calMonth.getMonth(), day);
-    const c = document.createElement('div');
-    c.textContent = day;
-    if(isDateAvailable(d)){
-      c.className = 'cal-cell available' + (sameDay(d, selectedDate) ? ' selected' : '');
-      c.onclick = ()=>{ selectedDate = d; renderCalendar(); validateForm(); };
-    } else {
-      c.className = 'cal-cell';
-    }
-    grid.appendChild(c);
-  }
-
-  const sel = document.getElementById('cal-selected');
-  if(selectedDate){
-    const dayNames = {4:'Jueves',6:'Sábado'};
-    sel.textContent = `Entrega elegida: ${dayNames[selectedDate.getDay()]} ${selectedDate.getDate()} de ${MONTH_NAMES[selectedDate.getMonth()]}, desde las 11:00 am`;
-  } else {
-    sel.textContent = 'Toca un jueves o sábado disponible en el calendario.';
-  }
-}
-
-document.getElementById('cal-prev').onclick = ()=>{
-  if(calMonth.getTime() <= calMinMonth.getTime()) return;
-  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()-1, 1);
-  renderCalendar();
-};
-document.getElementById('cal-next').onclick = ()=>{
-  if(calMonth.getTime() >= calMaxMonth.getTime()) return;
-  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 1);
-  renderCalendar();
-};
-
-// ---- Helpers de semana (jueves/sábado) ----
-function getJuevesDeLaSemanaRaw(fecha){
-  const d = new Date(fecha);
-  const dow = d.getDay();
-  const diff = 4 - dow;
-  const jueves = new Date(d);
-  jueves.setDate(d.getDate() + diff);
-  return jueves;
-}
 function formatISODate(d){
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
-function getJuevesDeLaSemana(fecha){
-  return formatISODate(getJuevesDeLaSemanaRaw(fecha));
+function sameDay(a,b){ return a && b && a.getTime()===b.getTime(); }
+
+// Próximo jueves y próximo sábado que vienen (nunca deja el selector vacío)
+function proximoDiaSemana(diaSemana){ // 4=jueves, 6=sábado
+  const dow = today.getDay();
+  let diff = diaSemana - dow;
+  if(diff < 0) diff += 7;
+  const d = new Date(today); d.setDate(today.getDate()+diff);
+  return d;
 }
-function getSabadoDeLaSemana(fecha){
-  const jueves = getJuevesDeLaSemanaRaw(fecha);
-  const sabado = new Date(jueves);
-  sabado.setDate(jueves.getDate() + 2);
-  return formatISODate(sabado);
+function fechasDeEstaSemana(){
+  return [proximoDiaSemana(4), proximoDiaSemana(6)];
+}
+const fechasDisponibles = fechasDeEstaSemana();
+
+function renderDayGrid(){
+  const el = document.getElementById('day-grid');
+  el.innerHTML = '';
+  if(fechasDisponibles.length === 0){
+    el.innerHTML = '<p class="cart-empty">No hay fechas de entrega disponibles esta semana. Vuelve a intentar el lunes.</p>';
+    return;
+  }
+  fechasDisponibles.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'pick-btn' + (sameDay(d, selectedDate) ? ' active' : '');
+    btn.type = 'button';
+    btn.innerHTML = `<span class="l1">${DAY_NAMES[d.getDay()]}</span><span class="l2">${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}, desde 11:00 am</span>`;
+    btn.onclick = async ()=>{
+      selectedDate = d;
+      renderDayGrid();
+      const sel = document.getElementById('cal-selected');
+      sel.textContent = 'Cargando disponibilidad...';
+      await loadDisponibilidad(formatISODate(d));
+      sel.textContent = `Entrega elegida: ${DAY_NAMES[d.getDay()]} ${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}`;
+      renderCatalog();
+      validateForm();
+    };
+    el.appendChild(btn);
+  });
 }
 
 // ---- PAGO ----
@@ -496,12 +429,20 @@ function productCard(p){
     const b = document.createElement('button');
     b.className = 'variant-btn';
     b.type = 'button';
-    b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-price">${v.price!=null ? fmt(v.price) : 'Consultar'}</span>`;
+    const key = p.name + '||' + v.size;
+    const agotado = disponibilidad && Object.prototype.hasOwnProperty.call(disponibilidad, key) && disponibilidad[key] <= 0;
+    if(agotado){
+      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-agotado">Agotado</span>`;
+      b.disabled = true;
+    } else {
+      b.innerHTML = `<span class="variant-size">${v.size}</span><span class="variant-price">${v.price!=null ? fmt(v.price) : 'Consultar'}</span>`;
+    }
     b.onclick = ()=>{
+      if(b.disabled) return;
       selectedVariant = v;
       vwrap.querySelectorAll('.variant-btn').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
-      addBtn.disabled = false;
+      addBtn.disabled = !selectedDate;
     };
     vwrap.appendChild(b);
   });
@@ -520,10 +461,10 @@ function productCard(p){
   addBtn.className = 'add-btn'; addBtn.type='button'; addBtn.textContent='Agregar';
   addBtn.disabled = true;
   addBtn.onclick = ()=>{
-    if(!selectedVariant) return;
+    if(!selectedVariant || !selectedDate) return;
     cart.push({
       key: p.id+'-'+selectedVariant.size+'-'+Date.now(),
-      name: p.name, size: selectedVariant.size, price: selectedVariant.price, qty
+      name: p.name, size: selectedVariant.size, price: selectedVariant.price, cupoMax: selectedVariant.cupoMax, qty
     });
     renderCart();
     validateForm();
@@ -536,23 +477,11 @@ function productCard(p){
 }
 
 function renderCatalog(){
+  const sub = document.getElementById('catalog-sub');
+  sub.textContent = selectedDate ? 'Elige tamaño y cantidad de cada producto' : 'Elige tu fecha de entrega arriba para ver disponibilidad';
+
   const el = document.getElementById('catalog');
   el.innerHTML = '';
-
-  if(catalogState === 'loading'){
-    el.innerHTML = '<p class="cart-empty">Cargando catálogo...</p>';
-    document.getElementById('festive-section').style.display = 'none';
-    return;
-  }
-
-  if(catalogState === 'error'){
-    const warn = document.createElement('p');
-    warn.className = 'error';
-    warn.style.marginBottom = '10px';
-    warn.textContent = 'No se pudo conectar con el catálogo en línea. Mostrando una versión de respaldo que puede no estar actualizada.';
-    el.appendChild(warn);
-  }
-
   CATALOG.forEach(p=> el.appendChild(productCard(p)));
 
   const fSection = document.getElementById('festive-section');
@@ -622,8 +551,7 @@ function buildMessage(){
   const email = document.getElementById('email').value.trim();
   const idnumber = document.getElementById('idnumber').value.trim();
   const note = document.getElementById('note').value.trim();
-  const dayNames = {4:'Jueves',6:'Sábado'};
-  const dateLabel = `${dayNames[selectedDate.getDay()]} ${selectedDate.toLocaleDateString('es-EC',{day:'numeric', month:'long'})}`;
+  const dateLabel = `${DAY_NAMES[selectedDate.getDay()]} ${selectedDate.toLocaleDateString('es-EC',{day:'numeric', month:'long'})}`;
   let lines = [];
   lines.push(`Hola, quiero hacer un pedido en Casa Ormaza Velásquez:`);
   lines.push('');
@@ -654,21 +582,22 @@ document.getElementById('send-btn').onclick = async ()=>{
   sendBtn.disabled = true;
   sendBtn.textContent = 'Verificando disponibilidad...';
 
-  const jueves = getJuevesDeLaSemana(selectedDate);
-  const sabado = getSabadoDeLaSemana(selectedDate);
+  const fechaISO = formatISODate(selectedDate);
 
   try {
     for (const item of cart) {
-      const grupo = GRUPO_CUPO[item.name];
-      if (!grupo) continue; // producto festivo u otro sin control de cupo
-
       const resp = await fetch(CUPOS_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ grupo, cantidad: item.qty, jueves, sabado })
+        body: JSON.stringify({
+          producto: item.name, tamano: item.size, cantidad: item.qty,
+          fecha: fechaISO, maxPorDefecto: item.cupoMax || 0
+        })
       });
       const result = await resp.json();
       if (!result.ok) {
-        errorEl.textContent = 'Uno de los productos ya no tiene cupo disponible para esa fecha. Elige otra fecha o reduce la cantidad.';
+        errorEl.textContent = result.motivo === 'cerrado manualmente'
+          ? 'Uno de los productos ya no está disponible para esa fecha.'
+          : 'Uno de los productos ya no tiene cupo disponible para esa fecha. Elige otra cantidad o quítalo del carrito.';
         sendBtn.disabled = false;
         sendBtn.textContent = 'Enviar pedido por WhatsApp →';
         return;
@@ -690,9 +619,9 @@ document.getElementById('send-btn').onclick = async ()=>{
   document.getElementById(id).addEventListener('input', validateForm);
 });
 
-renderCalendar();
+renderDayGrid();
 renderPay();
-renderCatalog(); // muestra "Cargando catálogo..." mientras llega la respuesta real
+renderCatalog();
 renderCart();
 validateForm();
 
