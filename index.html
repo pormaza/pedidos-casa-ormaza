@@ -588,29 +588,29 @@ document.getElementById('send-btn').onclick = async ()=>{
   const errorEl = document.getElementById('form-error');
   errorEl.textContent = '';
   sendBtn.disabled = true;
-  sendBtn.textContent = 'Verificando disponibilidad...';
 
   const fechaISO = formatISODate(selectedDate);
 
   try {
     for (const item of cart) {
-      const resp = await fetch(CUPOS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          producto: item.name, tamano: item.size, cantidad: item.qty,
-          fecha: fechaISO, maxPorDefecto: item.cupoMax || 0
-        })
+      const params = new URLSearchParams({
+        accion: 'pedido', producto: item.name, tamano: item.size,
+        cantidad: item.qty, fecha: fechaISO, maxPorDefecto: item.cupoMax || 0
       });
-      const result = await resp.json();
+      const result = await jsonpRequest(SHEET_SCRIPT_URL + '?' + params.toString());
       if (!result.ok) {
         errorEl.textContent = result.motivo === 'cerrado manualmente'
           ? 'Uno de los productos ya no está disponible para esa fecha.'
           : 'Uno de los productos ya no tiene cupo disponible para esa fecha. Elige otra cantidad o quítalo del carrito.';
         sendBtn.disabled = false;
-        sendBtn.textContent = 'Enviar pedido por WhatsApp →';
+        await loadDisponibilidad(fechaISO);
+        renderCatalog();
         return;
       }
     }
+
+    await loadDisponibilidad(fechaISO);
+    renderCatalog();
 
     const msg = buildMessage();
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -619,7 +619,6 @@ document.getElementById('send-btn').onclick = async ()=>{
     errorEl.textContent = 'No se pudo verificar el cupo. Intenta de nuevo.';
   } finally {
     sendBtn.disabled = false;
-    sendBtn.textContent = 'Enviar pedido por WhatsApp →';
   }
 };
 
