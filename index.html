@@ -229,6 +229,7 @@
 <div class="send-bar">
   <div class="send-bar-inner">
     <button class="send-btn" id="send-btn" disabled>Enviar pedido por WhatsApp →</button>
+    <a class="send-btn" id="whatsapp-link" href="#" style="display:none; text-align:center; text-decoration:none;">Abrir WhatsApp →</a>
     <div class="error" id="form-error"></div>
   </div>
 </div>
@@ -549,7 +550,11 @@ function validateForm(){
   const idnumber = document.getElementById('idnumber').value.trim();
   let ok = cart.length>0 && selectedDate && selectedPay && name && phone;
   if(wantsInvoice && !idnumber) ok = false;
-  document.getElementById('send-btn').disabled = !ok;
+  const sendBtn = document.getElementById('send-btn');
+  const waLink = document.getElementById('whatsapp-link');
+  sendBtn.disabled = !ok;
+  sendBtn.style.display = 'block';
+  waLink.style.display = 'none';
   return ok;
 }
 
@@ -585,6 +590,7 @@ document.getElementById('send-btn').onclick = async ()=>{
   if(!validateForm()) return;
 
   const sendBtn = document.getElementById('send-btn');
+  const waLink = document.getElementById('whatsapp-link');
   const errorEl = document.getElementById('form-error');
   errorEl.textContent = '';
   sendBtn.disabled = true;
@@ -614,9 +620,11 @@ document.getElementById('send-btn').onclick = async ()=>{
 
     const msg = buildMessage();
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    // Navegación directa de la pestaña actual: en iOS es lo más confiable para
-    // que el enlace wa.me abra la app de WhatsApp en vez de WhatsApp Web.
-    window.location.href = url;
+    // No navegamos por código: en iOS, WhatsApp solo abre la app si el link se
+    // toca directamente. Mostramos el link real para que el usuario lo toque.
+    waLink.href = url;
+    sendBtn.style.display = 'none';
+    waLink.style.display = 'block';
   } catch (err) {
     errorEl.textContent = 'No se pudo verificar el cupo. Intenta de nuevo.';
   } finally {
