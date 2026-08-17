@@ -589,6 +589,10 @@ document.getElementById('send-btn').onclick = async ()=>{
   errorEl.textContent = '';
   sendBtn.disabled = true;
 
+  // Abrimos la pestaña YA (vacía), en el mismo instante del clic — Safari/iPad
+  // bloquea window.open() si ocurre después de esperar respuestas async.
+  const waWindow = window.open('', '_blank');
+
   const fechaISO = formatISODate(selectedDate);
 
   try {
@@ -603,6 +607,7 @@ document.getElementById('send-btn').onclick = async ()=>{
           ? 'Uno de los productos ya no está disponible para esa fecha.'
           : 'Uno de los productos ya no tiene cupo disponible para esa fecha. Elige otra cantidad o quítalo del carrito.';
         sendBtn.disabled = false;
+        if (waWindow) waWindow.close();
         await loadDisponibilidad(fechaISO);
         renderCatalog();
         return;
@@ -614,9 +619,15 @@ document.getElementById('send-btn').onclick = async ()=>{
 
     const msg = buildMessage();
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    if (waWindow) {
+      waWindow.location.href = url;
+    } else {
+      // Si el navegador igual bloqueó la ventana vacía, intentamos abrir directo como respaldo
+      window.open(url, '_blank');
+    }
   } catch (err) {
     errorEl.textContent = 'No se pudo verificar el cupo. Intenta de nuevo.';
+    if (waWindow) waWindow.close();
   } finally {
     sendBtn.disabled = false;
   }
